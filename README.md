@@ -34,7 +34,7 @@ TX, RX are the on-chip FIFO sizes.
 
 Position | Name | Description
 ---------|------|------------
-1-3      | ???  |
+0-3      | ???  |
 4        | CTS  | Clear to send
 5        | DSR  | Data set ready
 6        | RI   | Ring indicator
@@ -92,9 +92,9 @@ Value |           Name            | Description
 
 `wValue` parameter:
 
-Value | Name | Description
-------|------|-----------
-0     | SIO_RESET_SIO | Reset without draining buffers
+Value |        Name        | Description
+------|--------------------|-----------
+0     | SIO_RESET_SIO      | Reset without draining buffers
 1     | SIO_RESET_PURGE_RX | Drain USB RX buffer (host-to-ftdi)
 2     | SIO_RESET_PURGE_TX | Drain USB TX buffer (ftdi-to-host)
 
@@ -127,3 +127,11 @@ MSB contains the bits to modify, LSB contain the bits to set them it, so combina
 ### `SIO_REQ_SET_BAUDRATE`
 
 TODO: baud rate conversion formulas
+
+### `SIO_REQ_SET_DATA`
+
+`wValue` parameter contains bitflags:
+
+ Bits |  Name  | Description
+------|--------|-------------
+ 8-10 | PARITY |
