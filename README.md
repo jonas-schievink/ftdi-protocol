@@ -28,7 +28,7 @@ TX, RX are the on-chip FIFO sizes.
  9.00      | 1024 | 1024 | yes   | FT232H
 10.00      |  512 |  512 | -     | FT-X
 
-## Modem status
+## `ModemStatus`
 
 16-bit value
 
@@ -134,4 +134,101 @@ TODO: baud rate conversion formulas
 
  Bits |  Name  | Description
 ------|--------|-------------
- 8-10 | PARITY |
+ 8-10 | PARITY | Parity configuration
+11-12 | STOP   | Stop bit configuration
+ 14   | BREAK  | Enable or disable the "break" line condition
+
+Parity configuration values:
+
+Value | Name
+------|-----
+ 0x00 | NONE
+ 0x01 | ODD
+ 0x02 | EVEN
+ 0x03 | MARK
+ 0x04 | SPACE
+
+Stop bit configuration values:
+
+Value |  Name   | Description
+------|---------|------------
+ 0x00 | STOP_1  | 1 Stop bit
+ 0x01 | STOP_15 | 1.5 Stop bits
+ 0x02 | STOP_2  | 2 Stop bits
+
+TODO: There also seems a bytelength field in there (to select 7 or 8 bits)
+but PyFTDI doesn't set it.
+
+### `SIO_REQ_POLL_MODEM_STATUS`
+
+Control Read request, response is a 2 Byte `ModemStatus`.
+
+### `SIO_REQ_SET_EVENT_CHAR`
+
+Changes, enables, or disables the "event" character.
+
+Bits | Meaning
+-----|--------
+ 0-7 | Event character
+   8 | Enable
+
+### `SIO_REQ_SET_ERROR_CHAR`
+
+Changes, enables, or disables the "error" character.
+
+Bits | Meaning
+-----|--------
+ 0-7 | Error character
+   8 | Enable
+
+### `SIO_REQ_SET_LATENCY_TIMER`
+
+Configures the target latency. The FTDI chip will keep accumulating data
+until this timeout expires, in order to send data in bigger batches to keep
+CPU load low. The timer can be adjusted to improve communication latency at
+the cost of higher CPU load.
+
+`wValue`: Latency in unspecified units (in range 12-255).
+
+### `SIO_REQ_GET_LATENCY_TIMER`
+
+Get the latency timer value.
+
+Response: 1 Byte latency (in range 12-255).
+
+### `SIO_REQ_SET_BITMODE`
+
+Sets the Bitmode for a set of pins.
+
+`wValue` parameter:
+
+Bits | Meaning
+-----|--------
+ 0-7 | Pins to modify (0 = all)
+8-15 | The Bitmode to switch to
+
+### `SIO_REQ_READ_PINS`
+
+Reads the raw pin state as a 1-Byte value.
+
+### `SIO_REQ_READ_EEPROM`
+
+* `wValue`: 0
+* `wIndex`: Address to read
+
+Reads a 16-bit word from the EEPROM.
+
+### `SIO_REQ_WRITE_EEPROM`
+
+* `wValue`: The word to write.
+* `wIndex`: The word address to write to.
+
+Writes a 16-bit word to the EEPROM.
+
+**WARNING**: This can brick the device.
+
+TODO: Document EEPROM format (checksum, etc.).
+
+### `SIO_REQ_ERASE_EEPROM`
+
+TODO
