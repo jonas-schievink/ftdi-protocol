@@ -88,6 +88,8 @@ Value |           Name            | Description
  0x91 | SIO_REQ_WRITE_EEPROM      | Write EEPROM content
  0x92 | SIO_REQ_ERASE_EEPROM      | Erase EEPROM content
 
+Unless otherwise noted, `wIndex` should be set to `bInterfaceNumber + 1` to apply the command to `bInterfaceNumber`.
+
 ### `SIO_REQ_RESET`
 
 `wValue` parameter:
@@ -188,23 +190,23 @@ until this timeout expires, in order to send data in bigger batches to keep
 CPU load low. The timer can be adjusted to improve communication latency at
 the cost of higher CPU load.
 
-`wValue`: Latency in unspecified units (in range 12-255).
+`wValue`: Latency in milliseconds (in range 12-255).
 
 ### `SIO_REQ_GET_LATENCY_TIMER`
 
 Get the latency timer value.
 
-Response: 1 Byte latency (in range 12-255).
+Response: 1 Byte latency (in range 2-255 milliseconds).
 
 ### `SIO_REQ_SET_BITMODE`
 
-Sets the Bitmode for a set of pins.
+Sets the Bitmode of the output pins.
 
 `wValue` parameter:
 
 Bits | Meaning
 -----|--------
- 0-7 | Pins to modify (0 = all)
+ 0-7 | Pin directions (0 = input, 1 = output)
 8-15 | The Bitmode to switch to
 
 ### `SIO_REQ_READ_PINS`
@@ -232,3 +234,68 @@ TODO: Document EEPROM format (checksum, etc.).
 ### `SIO_REQ_ERASE_EEPROM`
 
 TODO
+
+
+## MPSSE commands
+
+Before using these, `SIO_REQ_SET_BITMODE` needs to be used to put the chip into MPSSE mode.
+
+All MPSSE commands and data are transferred over the bulk endpoint that is otherwise used for UART data.
+
+Commands are documented in <https://www.ftdichip.com/Support/Documents/AppNotes/AN_108_Command_Processor_for_MPSSE_and_MCU_Host_Bus_Emulation_Modes.pdf>.
+
+A helpful introduction is available in <https://www.ftdichip.com/Support/Documents/AppNotes/AN_135_MPSSE_Basics.pdf>.
+
+The MCU Host emulation mode uses some of the same MPSSE commands.
+
+List of MPSSE-only command opcodes:
+
+Value |         Name         | Description
+------|----------------------|------------
+ 0x80 | SET_GPIO_LOW_BYTE    | Set GPIO pin direction and state, low byte (ADBUS 0-7), also sets initial value of clock pin
+ 0x81 | READ_GPIO_LOW_BYTE   | Read GPIO pin state, low byte (ADBUS 0-7)
+ 0x82 | SET_GPIO_HIGH_BYTE   | Set GPIO pin direction and state, high byte (ACBUS 0-7)
+ 0x83 | READ_GPIO_HIGH_BYTE  | Read GPIO pin state, high byte (ACBUS 0-7)
+ 0x84 | SET_TDI_TDO_LOOPBACK | Internally connect TDI to TDO
+ 0x85 | CLR_TDI_TDO_LOOPBACK | Disconnect TDI from TDO
+ 0x86 | SET_TCK_DIVISOR      | Set clock pin divisor
+
+Commands that are valid in both MPSSE and MCU Host emulation mode:
+
+Value |         Name         | Description
+------|----------------------|------------
+ 0x87 | SEND_IMMEDIATE       | Flush MPSSE buffers to USB host
+ 0x88 | WAIT_IO_HIGH         | Wait until either GPIOL1 or I/O1 is high
+ 0x89 | WAIT_IO_LOW          | Wait until either GPIOL1 or I/O1 is low
+
+MPSSE-only commands that are valid only on the -H series chips:
+
+Value |            Name             | Description
+------|-----------------------------|------------
+ 0x8A | DISABLE_CLK_DIV_5           | Disable the divide-by-5 circuit for the clock
+ 0x8B | ENABLE_CLK_DIV_5            | Enable the divide-by-5 circuit for the clock
+ 0x8C | ENABLE_3PH_CLK              | Enable 3-phase data clocking
+ 0x8D | DISABLE_3PH_CLK             | Disable 3-phase data clocking
+ 0x8E | CLK_NO_DATA_BITS            | Allow clock to be output without transferring data until N bits would be clocked out
+ 0x8F | CLK_NO_DATA_BYTES           | Allow clock to be output without transferring data until N bytes would be clocked out
+ 0x94 | CLK_NO_DATA_WAIT_HIGH       | Allow clock to be output without transferring data until GPIOL1 goes high
+ 0x95 | CLK_NO_DATA_WAIT_LOW        | Allow clock to be output without transferring data until GPIOL1 goes low
+ 0x96 | ENABLE_ADAPTIVE_CLK         | Enable adaptive clocking
+ 0x97 | DISABLE_ADAPTIVE_CLK        | Disable adaptive clocking
+ 0x9C | CLK_NO_DATA_BYTES_WAIT_HIGH | Allow clock to be output without transferring data until GPIOL1 goes high or N bytes would be clocked out
+ 0x9D | CLK_NO_DATA_BYTES_WAIT_LOW  | Allow clock to be output without transferring data until GPIOL1 goes low or N bytes would be clocked out
+
+FT232H-only MPSSE-only commands:
+
+Value |      Name      | Description
+------|----------------|------------
+ 0x9E | OPEN_COLLECTOR | Sets pins to only drive for 0-bits and tristate on 1-bits
+
+List of MCU Host emulation mode opcodes:
+
+Value |         Name         | Description
+------|----------------------|------------
+ 0x90 | MCU_READ_SHORT_ADDR  | Read a byte from an 8-bit address
+ 0x91 | MCU_READ_EXT_ADDR    | Read a byte from a 16-bit address
+ 0x92 | MCU_WRITE_SHORT_ADDR | Write a byte to an 8-bit address
+ 0x93 | MCU_WRITE_EXT_ADDR   | Write a byte to a 16-bit address
